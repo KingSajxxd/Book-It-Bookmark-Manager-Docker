@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmark Manager - Organize Your Links</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-bookmark"></i> Bookmark Manager</h1>
+                <p class="subtitle">Organize and manage your favorite links</p>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'times-circle' }}"></i>
+                            {{ message }}
+                            <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Search Bar -->
+        <div class="search-section">
+            <form class="search-form" method="GET">
+                <div class="search-input-group">
+                    <input type="text" name="search" placeholder="Search bookmarks..." value="{{ search_query }}" class="search-input">
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+            {% if search_query %}
+                <a href="{{ url_for('index') }}" class="clear-search">
+                    <i class="fas fa-times"></i> Clear Search
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Add Bookmark Form -->
+        <div class="add-section">
+            <button class="toggle-form-btn" onclick="toggleAddForm()">
+                <i class="fas fa-plus"></i> Add New Bookmark
+            </button>
+            
+            <form class="add-form" id="addForm" action="{{ url_for('add_bookmark') }}" method="POST">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input type="text" id="name" name="name" placeholder="e.g., Google" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="url">URL *</label>
+                        <input type="url" id="url" name="url" placeholder="https://example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <input type="text" id="category" name="category" placeholder="General" list="categories">
+                        <datalist id="categories">
+                            <option value="Work">
+                            <option value="Personal">
+                            <option value="Entertainment">
+                            <option value="Education">
+                            <option value="News">
+                            <option value="Social">
+                        </datalist>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" placeholder="Optional description..." rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Add Bookmark
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-item">
+                <i class="fas fa-bookmark"></i>
+                <span>{{ total_bookmarks }} Total Bookmarks</span>
+            </div>
+            {% if search_query %}
+            <div class="stat-item">
+                <i class="fas fa-search"></i>
+                <span>Showing results for "{{ search_query }}"</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Bookmarks List -->
+        <div class="bookmarks-section">
+            {% if bookmarks %}
+                <div class="bookmarks-grid">
+                    {% for bookmark in bookmarks %}
+                        <div class="bookmark-card">
+                            <div class="bookmark-header">
+                                <div class="bookmark-info">
+                                    <h3 class="bookmark-title">
+                                        <a href="{{ bookmark.url }}" target="_blank" rel="noopener noreferrer">
+                                            {{ bookmark.name }}
+                                        </a>
+                                    </h3>
+                                    <span class="bookmark-category">{{ bookmark.category or 'General' }}</span>
+                                </div>
+                                <div class="bookmark-actions">
+                                    <a href="{{ url_for('edit_bookmark', id=bookmark._id) }}" class="action-btn edit-btn" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('delete_bookmark', id=bookmark._id) }}" 
+                                       class="action-btn delete-btn" 
+                                       title="Delete"
+                                       onclick="return confirm('Are you sure you want to delete this bookmark?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="bookmark-url">
+                                <i class="fas fa-external-link-alt"></i>
+                                <span>{{ bookmark.url }}</span>
+                            </div>
+                            
+                            {% if bookmark.description %}
+                                <div class="bookmark-description">
+                                    {{ bookmark.description }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="bookmark-meta">
+                                <small>
+                                    <i class="fas fa-clock"></i>
+                                    Added {{ bookmark.created_at.strftime('%B %d, %Y') if bookmark.created_at else 'Recently' }}
+                                </small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if total_pages > 1 %}
+                    <div class="pagination">
+                        {% if current_page > 1 %}
+                            <a href="{{ url_for('index', page=current_page-1, search=search_query) }}" class="page-btn">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        {% endif %}
+                        
+                        <span class="page-info">
+                            Page {{ current_page }} of {{ total_pages }}
+                        </span>
+                        
+                        {% if current_page < total_pages %}
+                            <a href="{{ url_for('index', page=current_page+1, search=search_query) }}" class="page-btn">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-bookmark"></i>
+                    <h3>No bookmarks found</h3>
+                    <p>
+                        {% if search_query %}
+                            No bookmarks match your search criteria.
+                        {% else %}
+                            Start by adding your first bookmark above.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggleAddForm() {
+            const form = document.getElementById('addForm');
+            const btn = document.querySelector('.toggle-form-btn');
+            
+            if (form.classList.contains('show')) {
+                form.classList.remove('show');
+                btn.innerHTML = '<i class="fas fa-plus"></i> Add New Bookmark';
+            } else {
+                form.classList.add('show');
+                btn.innerHTML = '<i class="fas fa-minus"></i> Hide Form';
+                document.getElementById('name').focus();
+            }
+        }
+
+        // Auto-hide flash messages
+        setTimeout(() => {
+            const flashMessages = document.querySelector('.flash-messages');
+            if (flashMessages) {
+                flashMessages.style.opacity = '0';
+                setTimeout(() => flashMessages.remove(), 300);
+            }
+        }, 5000);
+        
+        // Load categories dynamically
+        fetch('/categories')
+            .then(response => response.json())
+            .then(categories => {
+                const datalist = document.getElementById('categories');
+                categories.forEach(category => {
+                    if (!Array.from(datalist.options).some(option => option.value === category)) {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        datalist.appendChild(option);
+                    }
+                });
+            })
+            .catch(console.error);
+    </script>
+</body>
+</html>

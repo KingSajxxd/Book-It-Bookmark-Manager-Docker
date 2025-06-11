@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Bookmark - Bookmark Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-edit"></i> Edit Bookmark</h1>
+                <p class="subtitle">Update your bookmark information</p>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'times-circle' }}"></i>
+                            {{ message }}
+                            <button class="close-btn" onclick="this.parentElement.remove()">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Edit Form -->
+        <div class="edit-section">
+            <div class="edit-form-container">
+                <form class="edit-form" method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="name">Name *</label>
+                            <input type="text" id="name" name="name" value="{{ bookmark.name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="url">URL *</label>
+                            <input type="url" id="url" name="url" value="{{ bookmark.url }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" id="category" name="category" value="{{ bookmark.category or 'General' }}" list="categories">
+                            <datalist id="categories">
+                                <option value="Work">
+                                <option value="Personal">
+                                <option value="Entertainment">
+                                <option value="Education">
+                                <option value="News">
+                                <option value="Social">
+                            </datalist>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="description">Description</label>
+                            <textarea id="description" name="description" rows="3">{{ bookmark.description or '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Bookmark
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bookmark Preview -->
+        <div class="preview-section">
+            <h3><i class="fas fa-eye"></i> Preview</h3>
+            <div class="bookmark-card">
+                <div class="bookmark-header">
+                    <div class="bookmark-info">
+                        <h3 class="bookmark-title">
+                            <a href="{{ bookmark.url }}" target="_blank" rel="noopener noreferrer">
+                                {{ bookmark.name }}
+                            </a>
+                        </h3>
+                        <span class="bookmark-category">{{ bookmark.category or 'General' }}</span>
+                    </div>
+                </div>
+                
+                <div class="bookmark-url">
+                    <i class="fas fa-external-link-alt"></i>
+                    <span>{{ bookmark.url }}</span>
+                </div>
+                
+                {% if bookmark.description %}
+                    <div class="bookmark-description">
+                        {{ bookmark.description }}
+                    </div>
+                {% endif %}
+                
+                <div class="bookmark-meta">
+                    <small>
+                        <i class="fas fa-clock"></i>
+                        Added {{ bookmark.created_at.strftime('%B %d, %Y') if bookmark.created_at else 'Recently' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .edit-section {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .edit-form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .preview-section {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .preview-section h3 {
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .preview-section h3 i {
+            color: var(--primary-color);
+        }
+
+        .preview-section .bookmark-card {
+            margin: 0;
+            box-shadow: none;
+            border: 2px dashed var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            .edit-section {
+                padding: 1rem;
+            }
+            
+            .preview-section {
+                padding: 1rem;
+            }
+        }
+    </style>
+
+    <script>
+        // Auto-hide flash messages
+        setTimeout(() => {
+            const flashMessages = document.querySelector('.flash-messages');
+            if (flashMessages) {
+                flashMessages.style.opacity = '0';
+                setTimeout(() => flashMessages.remove(), 300);
+            }
+        }, 5000);
+        
+        // Load categories dynamically
+        fetch('/categories')
+            .then(response => response.json())
+            .then(categories => {
+                const datalist = document.getElementById('categories');
+                categories.forEach(category => {
+                    if (!Array.from(datalist.options).some(option => option.value === category)) {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        datalist.appendChild(option);
+                    }
+                });
+            })
+            .catch(console.error);
+    </script>
+</body>
+</html>
