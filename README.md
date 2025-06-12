@@ -257,6 +257,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Application logs are stored in `./logs/` directory (mounted from container).
 
 
+
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-Latest-green?logo=flask&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Latest-green?logo=mongodb&logoColor=white)
