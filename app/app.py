@@ -14,17 +14,29 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 
 # MongoDB connection with authentication from environment variable
+# try:
+#     mongo_uri = os.environ.get('MONGO_URI')
+#     if not mongo_uri:
+#         raise ValueError("MONGO_URI environment variable is not set")
+
+#     client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+#     client.server_info()  # Force connection on a request as a check
+
+#     db = client['bookmarkdb'] # Explicitly choose bookmarkdb
+#     bookmarks = db['bookmarks']
+
+#     logger.info("Connected to MongoDB successfully")
+# except Exception as e:
+#     logger.error(f"Failed to connect to MongoDB: {e}")
+#     raise
+
+# MongoDB connection with error handling
 try:
-    mongo_uri = os.environ.get('MONGO_URI')
-    if not mongo_uri:
-        raise ValueError("MONGO_URI environment variable is not set")
-
-    client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-    client.server_info()  # Force connection on a request as a check
-
-    db = client['bookmarkdb'] # Explicitly choose bookmarkdb
+    client = MongoClient('mongodb://mongo:27017/', serverSelectionTimeoutMS=5000)
+    # Test the connection
+    client.server_info()
+    db = client['bookmarkdb']
     bookmarks = db['bookmarks']
-
     logger.info("Connected to MongoDB successfully")
 except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
